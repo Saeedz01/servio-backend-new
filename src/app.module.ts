@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { UsersModule } from './modules/users/users.module.js';
+import { ServicesModule } from './modules/services/services.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -15,6 +18,9 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       appSecret: process.env.OBSERVE_APP_SECRET ?? 'YOUR_APP_SECRET',
       serviceId: 'servio-backend',
     }),
+    PrismaModule,
+    UsersModule,
+    ServicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

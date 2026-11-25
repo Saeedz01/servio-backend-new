@@ -1,0 +1,122 @@
+// Servio database schema (PostgreSQL + Prisma).
+// Every table uses a UUID id and created_at / updated_at timestamps.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum PriceUnit {
+  PER_VISIT
+  PER_HOUR
+  FIXED
+}
+
+enum ServiceStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  role      String   @unique
+  status    String   @default("ACTIVE")
+  users     User[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model User {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  phone     String     @unique
+  password  String
+  roleId    String     @map("role_id") @db.Uuid
+  role      Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  status    UserStatus @default(ACTIVE)
+  provider  Provider?
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Provider {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @unique @map("user_id") @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idCardFront String?   @map("id_card_front")
+  idCardBack  String?   @map("id_card_back")
+  profilePic  String?   @map("profile_pic")
+  services    Service[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("providers")
+}
+
+model ServiceCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  nameRoman   String    @map("name_roman")
+  slug        String    @unique
+  description String    @default("")
+  isActive    Boolean   @default(true) @map("is_active")
+  services    Service[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("service_categories")
+}
+
+model ServiceArea {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String    @unique
+  isActive  Boolean   @default(true) @map("is_active")
+  services  Service[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("service_areas")
+}
+
+model Service {
+  id            String          @id @default(uuid()) @db.Uuid
+  providerId    String          @map("provider_id") @db.Uuid
+  provider      Provider        @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  title         String          @default("")
+  description   String          @default("")
+  imageUrl      String          @default("") @map("image_url")
+  address       String          @default("")
+  lat           Float           @default(0)
+  lng           Float           @default(0)
+  radiusKm      Float           @default(10) @map("radius_km")
+  priceAmount   Float           @default(0) @map("price_amount")
+  priceUnit     PriceUnit       @default(PER_VISIT) @map("price_unit")
+  availability  Json
+  status        ServiceStatus   @default(DRAFT)
+  categoryId    String          @map("category_id") @db.Uuid
+  category      ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  specialty     String[]        @default([])
+  serviceAreaId String          @map("service_area_id") @db.Uuid
+  serviceArea   ServiceArea     @relation(fields: [serviceAreaId], references: [id], onDelete: Restrict)
+  experience    Float           @default(0)
+  visitCharges  Float           @default(0) @map("visit_charges")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@map("services")
+}
