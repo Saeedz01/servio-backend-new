@@ -27,6 +27,20 @@ enum ServiceStatus {
   INACTIVE
 }
 
+enum JobStatus {
+  PENDING
+  AWARDED
+  CANCELLED
+  COMPLETED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
 model Role {
   id        String   @id @default(uuid()) @db.Uuid
   role      String   @unique
@@ -47,6 +61,7 @@ model User {
   role      Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
   status    UserStatus @default(ACTIVE)
   provider  Provider?
+  jobs      Job[]
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
@@ -61,6 +76,7 @@ model Provider {
   idCardBack  String?   @map("id_card_back")
   profilePic  String?   @map("profile_pic")
   services    Service[]
+  bids        Bid[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -75,6 +91,7 @@ model ServiceCategory {
   description String    @default("")
   isActive    Boolean   @default(true) @map("is_active")
   services    Service[]
+  jobs        Job[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -119,4 +136,41 @@ model Service {
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
   @@map("services")
+}
+
+model Job {
+  id          String          @id @default(uuid()) @db.Uuid
+  seekerId    String          @map("seeker_id") @db.Uuid
+  seeker      User            @relation(fields: [seekerId], references: [id], onDelete: Cascade)
+  categoryId  String          @map("category_id") @db.Uuid
+  category    ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  title       String
+  description String          @default("")
+  address     String          @default("")
+  latitude    Float           @default(0)
+  longitude   Float           @default(0)
+  status      JobStatus       @default(PENDING)
+  requestedAt DateTime        @default(now()) @map("requested_at")
+  bids        Bid[]
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@map("jobs")
+}
+
+model Bid {
+  id         String    @id @default(uuid()) @db.Uuid
+  providerId String    @map("provider_id") @db.Uuid
+  provider   Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  jobId      String    @map("job_id") @db.Uuid
+  job        Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  price      Float     @default(0)
+  note       String    @default("")
+  visitFee   Float     @default(0) @map("visit_fee")
+  status     BidStatus @default(PENDING)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@unique([providerId, jobId])
+  @@map("bids")
 }
