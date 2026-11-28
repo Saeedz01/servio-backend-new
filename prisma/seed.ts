@@ -153,6 +153,11 @@ async function main(): Promise<void> {
         create: { userId: user.id, profilePic: '' },
       });
       providerId = provider.id;
+      await prisma.providerTokenWallet.upsert({
+        where: { providerId: provider.id },
+        update: {},
+        create: { providerId: provider.id, balance: 40 },
+      });
     }
   }
 
@@ -207,7 +212,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log('Seed done: 3 roles, 7 areas, 10 categories, 3 users, 2 services.');
+  console.log('Seed done: 3 roles, 7 areas, 10 categories, 3 users, 2 services, provider wallet.');
 }
 
 await main()

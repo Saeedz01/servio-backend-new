@@ -34,7 +34,15 @@ export class UsersService {
         password,
         roleId: role.id,
         provider:
-          role.role === 'provider' ? { create: { profilePic: dto.profilePic } } : undefined,
+          role.role === 'provider'
+            ? {
+                create: {
+                  profilePic: dto.profilePic,
+                  // Every new provider starts the month with 40 coins.
+                  tokenWallet: { create: { balance: 40 } },
+                },
+              }
+            : undefined,
       },
       include: userInclude,
     });

@@ -41,6 +41,14 @@ enum BidStatus {
   WITHDRAWN
 }
 
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
 model Role {
   id        String   @id @default(uuid()) @db.Uuid
   role      String   @unique
@@ -62,6 +70,7 @@ model User {
   status    UserStatus @default(ACTIVE)
   provider  Provider?
   jobs      Job[]
+  bookings  Booking[]
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
@@ -69,18 +78,31 @@ model User {
 }
 
 model Provider {
-  id          String    @id @default(uuid()) @db.Uuid
-  userId      String    @unique @map("user_id") @db.Uuid
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  idCardFront String?   @map("id_card_front")
-  idCardBack  String?   @map("id_card_back")
-  profilePic  String?   @map("profile_pic")
+  id          String               @id @default(uuid()) @db.Uuid
+  userId      String               @unique @map("user_id") @db.Uuid
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idCardFront String?              @map("id_card_front")
+  idCardBack  String?              @map("id_card_back")
+  profilePic  String?              @map("profile_pic")
   services    Service[]
   bids        Bid[]
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  tokenWallet ProviderTokenWallet?
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
 
   @@map("providers")
+}
+
+// Monthly coin allowance for providers (starter / refill = 40).
+model ProviderTokenWallet {
+  id         String   @id @default(uuid()) @db.Uuid
+  providerId String   @unique @map("provider_id") @db.Uuid
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  balance    Int      @default(40)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("provider_token_wallet")
 }
 
 model ServiceCategory {
@@ -132,10 +154,30 @@ model Service {
   serviceArea   ServiceArea     @relation(fields: [serviceAreaId], references: [id], onDelete: Restrict)
   experience    Float           @default(0)
   visitCharges  Float           @default(0) @map("visit_charges")
+  bookings      Booking[]
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
   @@map("services")
+}
+
+// Direct service request from a seeker to a provider (no job post).
+model Booking {
+  id        String        @id @default(uuid()) @db.Uuid
+  seekerId  String        @map("seeker_id") @db.Uuid
+  seeker    User          @relation(fields: [seekerId], references: [id], onDelete: Cascade)
+  serviceId String        @map("service_id") @db.Uuid
+  service   Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  address   String        @default("")
+  lat       Float         @default(0)
+  lng       Float         @default(0)
+  note      String        @default("")
+  neededAt  DateTime      @map("needed_at")
+  status    BookingStatus @default(PENDING)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@map("bookings")
 }
 
 model Job {

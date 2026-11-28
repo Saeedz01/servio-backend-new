@@ -71,6 +71,13 @@ export class ServicesService {
         serviceAreaId: query.serviceAreaId,
         status: query.status,
       },
+      include: {
+        provider: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return services.map(toServiceEntity);
